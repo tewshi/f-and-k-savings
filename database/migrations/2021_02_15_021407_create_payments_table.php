@@ -15,13 +15,13 @@ class CreatePaymentsTable extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
-            $table->string('reference')->index();
+            $table->string('reference')->index()->unique();
             $table->integer('amount');
-            $table->integer('fee');
+            $table->integer('fees');
             $table->enum('status', ['success', 'failed'])->default('failed');
-            $table->foreignId('user_id')->unique()->nullable()->constrained()
+            $table->foreignId('user_id')->nullable()->constrained()
                 ->onDelete('set null')->onUpdate('cascade');
-            $table->foreignId('wallet_id')->unique()->nullable()->constrained()
+            $table->foreignId('wallet_id')->nullable()->constrained()
                 ->onDelete('set null')->onUpdate('cascade');
             $table->timestamps();
         });

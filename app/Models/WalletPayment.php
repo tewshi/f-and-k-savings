@@ -21,6 +21,16 @@ class WalletPayment extends Model
         'reference',
         'amount',
         'fees',
+        'status',
+    ];
+
+    /**
+     * The attributes that should be hidden for arrays.
+     *
+     * @var array
+     */
+    protected $hidden = [
+        'reference',
     ];
 
     protected $table = 'payments';

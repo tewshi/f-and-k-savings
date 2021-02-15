@@ -95,11 +95,11 @@ Route::post('/sanctum/token', function (Request $request) {
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
-        return response()->json($request->user()->load('wallet'));
+        return response()->json($request->user()->load('wallet', 'wallet.payments'));
     });
 
     Route::get('/wallet', function (Request $request) {
-        return response()->json($request->user()->wallet);
+        return response()->json($request->user()->wallet->load('payments'));
     });
 
     Route::post('/wallet', function (Request $request) {
@@ -110,7 +110,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ]);
 
         $ref = $form_data['reference'];
-        $email = $form_data['email'];
+        $email = $form_data['email'] ?? '';
         $requested_amount = $form_data['amount'];
 
         $payment_exists = WalletPayment::where('reference', $ref)->exists();
@@ -147,23 +147,26 @@ Route::middleware('auth:sanctum')->group(function () {
 
             $user = $request->user();
             $wallet = $user->wallet;
-            $wallet->deposit($amount);
 
             $funded_wallet = $wallet;
 
             if ($email) {
-                $funded_wallet = User::where('email', $email)->wallet;
+                $funded_wallet = User::where('email', $email)->first()->wallet;
             }
+
+            $funded_wallet->deposit($amount);
 
             $payment = WalletPayment::create([
                 'reference' => $ref,
-                'amount' => $data->amount,
+                'amount' => $amount,
                 'fees' => $fees,
-                'user_id' => $user->id,
-                'wallet_id' => $funded_wallet->id,
+                'status' => $status,
             ]);
 
-            return response()->json(['message' => 'Payment verified, wallet credited', 'wallet' => $wallet, 'payment' => $payment]);
+            $payment->user()->associate($user);
+            $payment->wallet()->associate($funded_wallet)->save();
+
+            return response()->json(['message' => 'Payment verified, wallet credited']);
 
         } catch (\Exception $e) {
             $error_message = explode("response:\n", $e->getMessage(), 2);

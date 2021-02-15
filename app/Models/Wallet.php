@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Wallet extends Model
 {
@@ -29,8 +30,18 @@ class Wallet extends Model
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * Returns payments made on this wallet
+     * @return HasMany
+     */
+    public function payments()
+    {
+        return $this->hasMany(WalletPayment::class);
+    }
+
     public function deposit($amount = 0) {
         $this->amount += $amount;
         $this->save();
     }
+
 }
