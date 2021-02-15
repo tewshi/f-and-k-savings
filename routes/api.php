@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\User;
+use App\Models\Wallet;
+use App\Models\WalletPayment;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
@@ -36,9 +38,13 @@ Route::post('/register', function (Request $request) {
         ]);
     }
 
-     event(new Registered($user));
+    $wallet = Wallet::create([]);
 
-    return response()->json(['message' => 'Account created!']);
+    $wallet->user()->associate($user)->save();
+
+    event(new Registered($user));
+
+    return response()->json(['message' => 'Account created!'], 201);
 });
 
 
@@ -84,19 +90,88 @@ Route::post('/sanctum/token', function (Request $request) {
         ]);
     }
 
-    return $user->createToken($request->device_name)->plainTextToken;
+    return response()->json($user->createToken($request->device_name)->plainTextToken);
 });
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
-        return $request->user()->load('wallet');
+        return response()->json($request->user()->load('wallet'));
     });
 
     Route::get('/wallet', function (Request $request) {
-        return $request->user()->wallet;
+        return response()->json($request->user()->wallet);
     });
 
     Route::post('/wallet', function (Request $request) {
-        return $request->user()->wallet;
+        $form_data = $request->validate([
+            'email' => 'sometimes|email',
+            'reference' => 'required',
+            'amount' => 'required|int|min:1000|max:10000000',
+        ]);
+
+        $ref = $form_data['reference'];
+        $email = $form_data['email'];
+        $requested_amount = $form_data['amount'];
+
+        $payment_exists = WalletPayment::where('reference', $ref)->exists();
+
+        if ($payment_exists) {
+            return response()->json(['message' => 'Payment already verified']);
+        }
+
+        try {
+            $client = new GuzzleHttp\Client;
+
+            $verification_response = $client->get(
+                "https://api.paystack.co/transaction/verify/{$ref}",
+                ['headers' => ['Authorization' => 'Bearer ' . env('PAYSTACK_SEC_KEY')]]
+            );
+            $code = $verification_response->getStatusCode();
+
+            $response = json_decode($verification_response->getBody());
+            $data = $response->data;
+            $amount = $data->amount / 100;
+            $status = $data->status;
+            $message = $data->message;
+            $fees = $data->fees;
+
+            if ($code !== 200) {
+                return response()->json(['message' => $message ?? 'An unexpected error occurred']);
+            }
+
+            if ($status !== 'success') {
+                return response()->json(['message' => $message ?? 'Payment could not be verified'], 422);
+            } else if ($amount !== $requested_amount) {
+                return response()->json(['message' => "Paid amount ({$requested_amount}) does not match with verified amount"], 422);
+            }
+
+            $user = $request->user();
+            $wallet = $user->wallet;
+            $wallet->deposit($amount);
+
+            $funded_wallet = $wallet;
+
+            if ($email) {
+                $funded_wallet = User::where('email', $email)->wallet;
+            }
+
+            $payment = WalletPayment::create([
+                'reference' => $ref,
+                'amount' => $data->amount,
+                'fees' => $fees,
+                'user_id' => $user->id,
+                'wallet_id' => $funded_wallet->id,
+            ]);
+
+            return response()->json(['message' => 'Payment verified, wallet credited', 'wallet' => $wallet, 'payment' => $payment]);
+
+        } catch (\Exception $e) {
+            $error_message = explode("response:\n", $e->getMessage(), 2);
+            if (count($error_message) == 2) {
+                $error = json_decode($error_message[1]);
+                return response()->json(['message' => $error->message], $e->getCode());
+            }
+            return response()->json(['message' => 'An unexpected error occurred', 'm' => $e->getMessage()], 400);
+        }
     });
 });

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Wallet extends Model
+class WalletPayment extends Model
 {
     use HasFactory;
 
@@ -17,11 +17,16 @@ class Wallet extends Model
      */
     protected $fillable = [
         'user_id',
+        'wallet_id',
+        'reference',
         'amount',
+        'fees',
     ];
 
+    protected $table = 'payments';
+
     /**
-     * Returns the user that this wallet belongs to
+     * Returns the user that made this payment
      * @return BelongsTo
      */
     public function user()
@@ -29,8 +34,12 @@ class Wallet extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function deposit($amount = 0) {
-        $this->amount += $amount;
-        $this->save();
+    /**
+     * Returns the wallet that this payment was made to
+     * @return BelongsTo
+     */
+    public function wallet()
+    {
+        return $this->belongsTo(Wallet::class);
     }
 }
