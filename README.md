@@ -7,6 +7,64 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## How to run this project
+Clone the repository
+```shell script
+git clone https://github.com/tewshi/f-and-k-savings.git
+```
+
+```shell script
+cd f-and-k-savings
+```
+
+Install PHP dependencies
+```shell script
+composer install
+```
+
+Create a mysql database named `fk_savings`
+
+Copy the .example.env file to .env
+```shell script
+cp .example.env .env
+```
+
+Update the database user and password (if set on your database instance) 
+`DB_USERNAME` and `DB_PASSWORD`
+
+Currently, all emails go to mailtrap
+
+Migrate the database tables
+```shell script
+php artisan migrate
+``` 
+
+Run seeder to generate 10 users with a wallet for the first user
+```shell script
+php artisan db:seed
+```
+
+The postman collection:
+[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/ab7d2d663ec07f152c3f)
+
+Create account
+`POST /api/register`
+
+Login / authenticate
+`POST /api/sanctum/token`
+
+Get current user details
+`GET /api/user`
+
+Get current user wallet
+`GET /api/wallet`
+
+Get current user wallet payments
+`GET /api/wallet/payments`
+
+Fund user wallet, or another user's wallet using email (unique)
+`POST /api/wallet`
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
