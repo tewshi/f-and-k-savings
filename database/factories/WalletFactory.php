@@ -25,7 +25,7 @@ class WalletFactory extends Factory
     {
         return [
             'amount' => 100000,
-            'user_id' => User::where('email', 'entewshi@gmail.com')->first()->id,
+            'user_id' => User::first()->id,
         ];
     }
 }

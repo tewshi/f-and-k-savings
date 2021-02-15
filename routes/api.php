@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -35,7 +36,7 @@ Route::post('/register', function (Request $request) {
         ]);
     }
 
-    // event(new Registered($user));
+     event(new Registered($user));
 
     return response()->json(['message' => 'Account created!']);
 });
@@ -58,7 +59,7 @@ Route::get('/email/verify-account/{id}/{hash}', function (EmailVerificationReque
     $request->fulfill();
 
     return response()->json(['message' => 'Email verified']);
-})->middleware(['auth', 'signed'])->name('verification.verify');
+})->middleware(['auth:api', 'signed'])->name('verification.verify');
 
 
 Route::post('/email/verification-notification', function (Request $request) {
@@ -76,12 +77,6 @@ Route::post('/sanctum/token', function (Request $request) {
     ]);
 
     $user = User::where('email', $request->email)->first();
-
-//    if ($user && $user->email_verified_at === null) {
-//        $user->sendEmailVerificationNotification();
-//
-//        return response()->json(['message' => 'Email Verification link sent!']);
-//    }
 
     if (!$user || !Hash::check($request->password, $user->password)) {
         throw ValidationException::withMessages([
