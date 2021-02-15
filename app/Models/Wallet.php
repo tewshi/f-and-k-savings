@@ -21,6 +21,8 @@ class Wallet extends Model
         'amount',
     ];
 
+    protected $with = ['payments'];
+
     /**
      * Returns the user that this wallet belongs to
      * @return BelongsTo
@@ -39,6 +41,10 @@ class Wallet extends Model
         return $this->hasMany(WalletPayment::class);
     }
 
+    /**
+     * Deposits specified amount into user's wallet
+     * @param int $amount
+     */
     public function deposit($amount = 0) {
         $this->amount += $amount;
         $this->save();

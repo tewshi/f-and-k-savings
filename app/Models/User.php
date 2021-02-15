@@ -44,7 +44,7 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     /**
-     * Returns the user that this wallet belongs to
+     * Returns the wallet that belongs to this user
      * @return HasOne
      */
     public function wallet()

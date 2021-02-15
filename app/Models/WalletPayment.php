@@ -33,6 +33,8 @@ class WalletPayment extends Model
         'reference',
     ];
 
+    protected $with = ['user'];
+
     protected $table = 'payments';
 
     /**
