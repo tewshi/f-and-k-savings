@@ -49,21 +49,33 @@ The postman collection:
 
 Create account
 `POST /api/register`
+`data: {name: string, email: string, password: string}`
 
 Login / authenticate
 `POST /api/sanctum/token`
+`data: {email: string, password: string}`
 
 Get current user details
 `GET /api/user`
+`headers: Authorization Bearer token`
 
 Get current user wallet
 `GET /api/wallet`
+`headers: Authorization Bearer token`
 
 Get current user wallet payments
 `GET /api/wallet/payments`
+`headers: Authorization Bearer token`
 
-Fund user wallet, or another user's wallet using email (unique)
+Fund user wallet
 `POST /api/wallet`
+`headers: Authorization Bearer token`
+`data: {amount: number|string, reference: number|string}`
+
+Fund another user's wallet using email (unique)
+`POST /api/wallet`
+`headers: Authorization Bearer token`
+`data: {email: string, amount: number|string, reference: number|string}`
 
 ## About Laravel
 
